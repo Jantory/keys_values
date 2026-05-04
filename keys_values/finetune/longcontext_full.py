@@ -36,7 +36,6 @@ from litgpt.utils import (
     auto_download_checkpoint,
     check_nvlink_connectivity,
     check_valid_checkpoint_dir,
-    copy_config_files,
     create_finetuning_performance_report,
     find_resume_path,
     get_default_supported_precision,
@@ -86,6 +85,7 @@ from keys_values.finetune.utils import (
     create_optimizer,
     may_match_twice_factory,
     adjust_cache_kwargs,
+    copy_config_files,
 )
 from keys_values.generate.base import generate
 from keys_values.gpu_memory import RecordGPUMemory

@@ -14,6 +14,7 @@
 import os
 from datetime import datetime
 from pathlib import Path
+import shutil
 from typing import Optional, Tuple, Literal, Dict, Any, Union
 
 import lightning as L
@@ -476,3 +477,20 @@ def adjust_cache_kwargs(
                     smart_lastrec_info = _get_smart_lastrec_info(data, tokenizer)
                 cache_kwargs[name] = getattr(smart_lastrec_info, name)
         kv_cache.cache_kwargs = cache_kwargs
+
+
+def copy_config_files(
+    source_dir: Path,
+    out_dir: Path,
+    include_tokenizer_files: bool = False,
+) -> None:
+    """Copies the specified configuration and tokenizer files into the output directory."""
+
+    all_files = ("config.json", "generation_config.json", "model_config.yaml")
+    if include_tokenizer_files:
+        all_files += ("tokenizer.json", "tokenizer.model", "tokenizer_config.json")
+
+    for file_name in all_files:
+        src_path = source_dir / file_name
+        if src_path.exists():
+            shutil.copy(src_path, out_dir)
