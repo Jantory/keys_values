@@ -982,6 +982,12 @@ def get_mha_and_cache_kwargs(
         init_val=limit_gb,
         name="attention_forward_temp_size_gb",
     )
+    from keys_values.pos_encoding import set_fused_rope_enabled
+    set_fused_rope_enabled(sdpa.fused_rope)
+    from keys_values.fused_rmsnorm import set_fused_rmsnorm_enabled
+    set_fused_rmsnorm_enabled(sdpa.fused_rmsnorm)
+    from keys_values.fused_swiglu import set_fused_swiglu_enabled
+    set_fused_swiglu_enabled(sdpa.fused_swiglu)
     mha_kwargs: Dict[str, Any] = dict(
         tmp_array_limit_gb=tmp_array_limit_forward,
         pos_encoding=position_encoding_factory(config, do_yarn=yarn_rope),
