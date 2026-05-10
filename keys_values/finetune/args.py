@@ -11,7 +11,7 @@
 # WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
 # See the License for the specific language governing permissions and
 # limitations under the License.
-from dataclasses import dataclass
+from dataclasses import dataclass, replace
 import math
 from typing import Optional, Tuple, Dict, Any, List, Literal
 
@@ -47,9 +47,23 @@ def _append_line(lines: List[str], name: str, value: Optional[Any]):
         lines.append(f"  {name}: {value}")
 
 
+_CACHE_KWARGS_NAMES = (
+    "allocate_buffers",
+    "grace_period",
+    "init_grace_tokens",
+    "normalize_scores",
+)
+
+
 @dataclass
 class KVCacheArgs:
     """Command line arguments for key-value cache and long context inference
+
+    Why do we have args `allocate_buffers`, `grace_period`, `init_grace_tokens`,
+    `normalize_scores`, which should really be fields in `cache_kwargs`?
+    This is because `cache_kwargs` is hard to set in the CLI. We use
+    :meth:`update_cache_kwargs` to update `cache_kwargs` from these.
+
     Args:
         name: Name of KV cache, has form `{cache_name}-{buffer_name}`. At
             present, this is the same for all layers of a model
@@ -71,6 +85,10 @@ class KVCacheArgs:
         cpu_offload: If `True`, KV cache buffers are offloaded to CPU during the
             forward pass. At the moment, this is implemented only for quantized
             KV cache buffers.
+        normalize_scores: Only for H2O and q-H2O cache policies. If `True`,
+            score values are normalized by the number of token positions an
+            entry is in the cache already.
+        KV cache buffers are normalized to
     """
 
     name: str
@@ -82,6 +100,7 @@ class KVCacheArgs:
     grace_period: int = 0
     init_grace_tokens: int = 0
     cpu_offload: bool = False
+    normalize_scores: bool = False
     # Legacy (these are global args now)
     verbose: Optional[str] = None
     attention_forward_temp_size_gb: Optional[float] = None
@@ -142,6 +161,21 @@ class KVCacheArgs:
 
     def needs_attn_weights(self) -> bool:
         return KVCacheFactory.needs_attn_weights(self.name)
+
+    def update_cache_kwargs(self) -> "KVCacheArgs":
+        """
+        Copies values of args used for KV cache creation into `cache_kwargs`,
+        unless the respective field is already set.
+
+        Returns:
+            New :class:`KVCacheArgs` object with `cache_kwargs` updated.
+
+        """
+        new_cache_kwargs = {
+            name: getattr(self, name) for name in _CACHE_KWARGS_NAMES
+        }
+        new_cache_kwargs.update(self.cache_kwargs)
+        return replace(self, cache_kwargs=new_cache_kwargs)
 
 
 @dataclass

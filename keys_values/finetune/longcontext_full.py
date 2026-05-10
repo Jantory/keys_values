@@ -189,7 +189,6 @@ def setup(
         chunk_size=1024,
         cache_kwargs={
             "replay_log_blocksize": 1024,
-            "allocate_buffers": False,
             "max_num_ranges": 4,
         },
         randomize_chunk_sizes=False,
@@ -705,6 +704,9 @@ def main(
         os.makedirs(out_dir, exist_ok=True)
 
     with fabric.init_module(empty_init=(fabric.world_size > 1)):
+        # Updates `kv_cache.cache_kwargs` from other args:
+        kv_cache = kv_cache.update_cache_kwargs()
+        # Set `mha_kwargs`, update kv_cache.cache_kwargs` with that as well:
         mha_kwargs = get_mha_and_cache_kwargs(
             attention_forward_temp_size_gb,
             config,
@@ -1084,6 +1086,8 @@ def wrap_gpt_model(
     gpt_model.clear_kv_caches()
     cache_kwargs = dict() if kv_cache.cache_kwargs is None else kv_cache.cache_kwargs
     cache_kwargs["max_chunk_size"] = kv_cache.maximum_chunk_size()
+    # Remove fields from `cache_kwargs` which are not used for the concrete
+    # cache type:
     cache_kwargs = cleanup_cache_kwargs(
         split_name(kv_cache.name)[0],
         cache_kwargs,

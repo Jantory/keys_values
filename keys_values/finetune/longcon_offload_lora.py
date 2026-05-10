@@ -83,7 +83,6 @@ def setup(
         chunk_size=1024,
         cache_kwargs={
             "replay_log_blocksize": 1024,
-            "allocate_buffers": False,
             "max_num_ranges": 4,
         },
         randomize_chunk_sizes=False,
